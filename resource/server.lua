@@ -1,40 +1,35 @@
-lib.versionCheck('stevoscriptsteam/stevo_policebadge')
-if not lib.checkDependency('stevo_lib', '1.6.7') then error('You need to update stevo_lib to the latest version for stevo_policebadges.') end
 lib.locale()
 
-local stevo_lib = exports['stevo_lib']:import()
+ESX = exports["es_extended"]:getSharedObject()
+
 local config = lib.require('config')
 
 
 lib.callback.register("stevo_policebadge:retrieveInfo", function(source)
     local badge_data = {}
-    local identifier = stevo_lib.GetIdentifier(source)
-    local job = stevo_lib.GetPlayerJobInfo(source)
 
-    
-    badge_data.rank = job.gradeName  or "Unknown" 
+    local xPlayer = ESX.GetPlayerFromId(source)
+    if not xPlayer then return badge_data end  -- Ensure player exists
 
-    badge_data.name = stevo_lib.GetName(source)
+    badge_data.name = xPlayer.getName()
+    badge_data.rank = xPlayer.getJob().gradeName or "Unknown"
+
+    local id = xPlayer.getIdentifier()
+    local result = MySQL.single.await('SELECT `image` FROM `stevo_badge_photos` WHERE `identifier` = ? LIMIT 1', { id })
     
-    
-    local table = MySQL.single.await('SELECT `image` FROM `stevo_badge_photos` WHERE `identifier` = ? LIMIT 1', {
-        identifier
-    })
-     
-    badge_data.photo = table ~= nil and table.image or nil
+    badge_data.photo = result and result.image or nil
     
     return badge_data
 end)
 
-lib.callback.register("stevo_policebadge:setBadgePhoto", function(source, photo)
-    local identifier = stevo_lib.GetIdentifier(source)
 
+lib.callback.register("stevo_policebadge:setBadgePhoto", function(source, photo)
+    local xPlayer = ESX.GetPlayerFromId(source)
+    local identifier = xPlayer.getIdentifier()
 
     local image = MySQL.single.await('SELECT `image` FROM `stevo_badge_photos` WHERE `identifier` = ? LIMIT 1', {
         identifier
     })
-
-    local id 
 
     if not image then 
         id = MySQL.insert.await('INSERT INTO `stevo_badge_photos` (identifier, image) VALUES (?, ?)', {
@@ -71,7 +66,7 @@ AddEventHandler('onResourceStart', function(resource)
         lib.print.info('[Stevo Scripts] Deployed database table for stevo_badge_photos')
     end
 
-    stevo_lib.RegisterUsableItem(config.badge_item_name, function(source)
+    ESX.RegisterUsableItem(config.badge_item_name, function(source)
         TriggerClientEvent('stevo_policebadge:use', source)
     end)
 end)

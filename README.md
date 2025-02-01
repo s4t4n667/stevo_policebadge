@@ -1,5 +1,5 @@
-## stevo_policebadge - 1.5.6
-Badges for your police to identify themselves!
+## stevo_policebadge
+ESX ONLY VERSION. Badges for your police to identify themselves!
 
 - Highly Configurable
 - 100% Optimized

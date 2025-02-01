@@ -1,8 +1,8 @@
-if not lib.checkDependency('stevo_lib', '1.6.0') then error('You need to update stevo_lib to the latest version for stevo_policebadges.') end
 lib.locale()
 
+ESX = exports["es_extended"]:getSharedObject()
+
 local config = lib.require('config')
-local stevo_lib = exports['stevo_lib']:import()
 local CURRENTLY_USING_BADGE = false
 
 
@@ -45,7 +45,8 @@ local function showBadge()
 end
 
 RegisterNetEvent('stevo_policebadge:use', function()
-    local job, gang = stevo_lib.GetPlayerGroups()
+    local job = ESX.PlayerData.job and ESX.PlayerData.job.name or nil
+    local gang = ESX.PlayerData.gang and ESX.PlayerData.gang.name or nil
     local swimming = IsPedSwimmingUnderWater(cache.ped)
     local incar = IsPedInAnyVehicle(cache.ped, true)
     local job_auth = false
@@ -57,9 +58,23 @@ RegisterNetEvent('stevo_policebadge:use', function()
         end
     end
 
-    if not job_auth then return stevo_lib.Notify(locale('not_police'), 'error', 3000) end
+    if not job_auth then return 
+        lib.notify({
+            title = 'Unauthorised',
+            description = 'You are not a Police officer!',
+            type = 'error',
+            duration = 3000,
+        })
+    end
 
-    if swimming or incar then return stevo_lib.Notify(locale('not_now'), 'error', 3000) end
+    if swimming or incar then return 
+        lib.notify({
+            title = 'Unable to use',
+            description = 'You cannot use this now!',
+            type = 'error',
+            duration = 3000,
+        })
+    end
 
     if CURRENTLY_USING_BADGE then return end
 
@@ -72,7 +87,8 @@ AddEventHandler('stevo_policebadge:displaybadge', function(data)
 end)
 
 RegisterCommand(config.set_image_command, function()
-    local job, gang = stevo_lib.GetPlayerGroups()
+    local job = ESX.PlayerData.job and ESX.PlayerData.job.name or nil
+    local gang = ESX.PlayerData.gang and ESX.PlayerData.gang.name or nil
 
     local job_auth = false
 
@@ -83,14 +99,29 @@ RegisterCommand(config.set_image_command, function()
         end
     end
 
-    if not job_auth then stevo_lib.Notify(locale('not_police'), 'error', 3000) return end
+    if not job_auth then 
+        lib.notify({
+            title = 'Unauthorised',
+            description = 'You are not authorised to use this command',
+            type = 'error',
+            duration = 3000,
+        })
+    return end
 
 
     local input = lib.inputDialog(locale('input_title'), {locale('input_text')})
  
-    if not input then stevo_lib.Notify(locale('no_photo'), 'error', 3000) return end
+    if not input then 
+        lib.notify({
+            title = 'No Photograph',
+            description = 'You didn\'t enter a link for a photograph',
+            type = 'error',
+            duration = 3000,
+        })
+    return end
 
     local setBadge = lib.callback.await("stevo_policebadge:setBadgePhoto", false, input[1])
+    
     if setBadge then
         lib.alertDialog({
             header = locale('department_name'),
